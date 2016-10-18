@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+.axis--grid .domain {
+  fill: #ddd;
+  stroke: none;
+}
+
+.axis--x .domain,
+.axis--grid .tick line {
+  stroke: #fff;
+  stroke-opacity: .5;
+}
+
+.axis--grid .tick--minor line {
+  stroke-opacity: .5;
+}
+
+
+/*some effects here added to the brush handle*/
+
+
+
+
+
+.axis--x .tick line {
+  stroke: #fff;
+  stroke-opacity: .8;
+}
+
+/*this is quite good:
+http://bl.ocks.org/elsherbini/5564315
+
+the following code is sourced from here:
+https://bl.ocks.org/mbostock/6232537
+*/
+
+
+</style>
+<body>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+
+<script>document.write('<script src="http://' + (location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1"></' + 'script>')</script>
+
+<script>
+
+var dte_start = new Date(2004, 0, 1),
+    dte_end = new Date(2012, 11, 31);
+
+
+
+
+var margin = {top: 200, right: 40, bottom: 200, left: 40},
+    width = 960 - margin.left - margin.right,
+    height = 450 - margin.top - margin.bottom;
+
+// var x = d3.scaleTime()
+//     .domain([new Date(2000, 0, 1), new Date(2016, 11, 31)])
+//     .range([0, width]);
+
+
+var dte_domain_start = new Date(2000, 0, 31),
+// we need to add an extra period to the end date
+dte_domain_end = d3.timeMonth.offset(new Date(2016, 11, 31), 1);
+
+// create an array and then subtract a day from each entry
+var arr_dte_range_domain = d3.timeMonths(dte_domain_start, dte_domain_end)
+      .map(function(d) {return d3.timeDay.offset(d, -1);});
+
+
+// we need to manually create a range
+var in_size = width / (arr_dte_range_domain.length);
+
+var arr_range = arr_dte_range_domain.map(function(d,i) {
+            return(Math.round(in_size * i));});
+
+
+var x2 = d3.scaleOrdinal()
+      .domain(arr_dte_range_domain)
+      .range(arr_range);
+
+
+
+
+
+var x = d3.scaleTime()
+    .domain([new Date(2000, 0, 31), new Date(2016, 11, 31)])
+    .rangeRound([0, width]);
+
+
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom);
+
+
+var context = svg.append("g")
+    .attr("class", "context")
+    .attr("transform", "translate(" + 30 + "," + 150 + ")");
+
+context.append("g")
+    .attr("class", "axis axis--grid")
+    .attr("transform", "translate(0," + height + ")")
+    .call(d3.axisBottom(x)
+      	.ticks(d3.timeMonth, 3)
+        .tickSize(-height)
+      .tickFormat(function() { return null; }))
+
+  .selectAll(".tick")
+    .classed("tick--minor", function(d) { return d.getHours(); });
+
+context.append("g")
+    .attr("class", "axis axis--x")
+    .attr("transform", "translate(0," + height + ")")
+    .call(d3.axisBottom(x)
+       .ticks(d3.timeMonth,12)
+       .tickPadding(0)
+    	.tickFormat(d3.timeFormat('%Y')))
+    .attr("text-anchor", null)
+  .selectAll("text")
+    .attr("x", 1);
+
+
+// default handle size is 6
+var brush = d3.brushX()
+                  .extent([[0, 0], [width, height]])
+                  .handleSize(6)
+                  .on("start brush end", brushmoved);
+
+ 
+var gBrush = context.append("g")
+              .attr("class", "brush")
+              .call(brush);
+
+
+
+
+var left_c = "M-0.5-16.7c-3.3,0-6,2.7-6,6v21.3c0,3.3,2.7,6,6,6V-16.7z M-2.5-8.7V8.7 M-4.5-8.7V8.7";
+
+
+var right_p = "M0.5,16.7c3.3,0,6-2.7,6-6v-21.3c0-3.3-2.7-6-6-6V16.7z M2.5,8.7V-8.7 M4.5,8.7V-8.7";
+   // .attr("shape-rendering", "optimizeQuality")
+
+
+
+
+var handle = gBrush.selectAll(".handle--custom")
+  .data([{type: "w"}, {type: "e"}])
+  .enter().append("path")
+    .attr("class", "handle--custom")
+    .attr("class", function(d, i) {
+              // two types w = start; e = end
+              var str_class_type = (d.type == "w" ? "brush_start" : "brush_end");
+              return str_class_type;
+          })
+    .attr("fill", "#eee")
+    .attr("fill-opacity", 1)
+    .attr("stroke", "#666")
+    .attr("stroke-width", 1)
+    .attr("stroke-width", 1)
+
+    //.attr("shape-rendering", "crispEdges")
+    .attr("d", function(d, i) {
+                    var start_y = height / 2;
+                    var brush_width = 10;
+                    // var str_left = left_c;
+                    var str_left = "m0 "+start_y+"h"+ brush_width+"v-"+height+"h-"+brush_width+"z";
+                    var str_right = "m0 "+start_y+"h-"+ brush_width+"v-"+height+"h"+brush_width+"z";
+                    // var str_right = right_p;
+                     // two types w = start; e = end
+                    var str_return = (d.type == "w" ? str_left : str_right);
+                    return str_return;
+                  } // function
+          ); //attr d
+
+
+function fn_set_initial_pos() {
+
+
+  dte_start = new Date(2006, 0, 31);
+  dte_end = new Date(2012, 0, 31);
+  arr_initial_pos = [x(dte_start), x(dte_end)];
+  gBrush.call(brush.move, arr_initial_pos);
+}
+
+
+// TO DO (14.10):
+// add nicer handle--handles 													                        DONN
+// implement snappable behaviour  												                    DONE
+// minimum distance of 12 months (should be similar to snappable)   			    DONE
+// understand map function.  													                        DONE
+// change style of elements underneath brush (see Bostock brush handle)			  DONE
+// see this for advanced brush styles:  http://bl.ocks.org/jisaacks/5678983	  PENDING
+// understand the difference in brush position and handle POSITION            PENDING
+// may need to have two different scales for display and internals. 
+
+var globalEvent;
+var gDate;
+
+
+
+function brushended() {
+  if (!d3.event.sourceEvent) return; // Only transition after input.
+  if (!d3.event.selection) return; // Ignore empty selections.
+  var d0 = d3.event.selection.map(x.invert),
+      d1 = d0.map(d3.timeDay.round);
+
+  var s = d3.event.selection;
+  globalEvent = d3.event.selection;
+
+  // If empty when rounded, use floor & ceil instead.
+  if (d1[0] >= d1[1]) {
+    d1[0] = d3.timeDay.floor(d0[0]);
+    d1[1] = d3.timeDay.offset(d1[0]);
+  }
+
+ d3.select(this).transition(0).call(d3.event.target.move, d1.map(x));
+
+
+
+
+
+
+
+  handle.attr("display", null).attr("transform", function(d, i) { return "translate(" + s[i] + "," + height / 2 + ")"; });
+}
+
+
+
+
+
+
+
+
+
+function brushmoved() {
+	// see here that s contains details of the event. This s object is just an array with
+	// two elements which I guess are the brush end. 
+	
+  // if (!d3.event.sourceEvent) return; // Only transition after input.
+  if (!d3.event.selection) return; // Ignore empty selections.
+
+  var new_pos = d3.event.selection;
+	var move_ind;
+
+
+//	console.log(d3.event.type);
+	// the start event always occurs
+	if (d3.event.type === "start"){
+		// init_pos becomes our reference
+		init_pos = d3.event.selection;
+		move_ind = "start";
+		// console.log('here in start');
+		// console.log(d3.event.sourceEvent);
+		fn_set_initial_pos();
+
+	} // if
+	else if (d3.event.type === "end"){
+		// ARRAY POSITION ZERO here is the left brush
+		if (init_pos[0] !== new_pos[0] && init_pos[1] !== new_pos[1]) {
+			move_ind = "both";		
+		} 
+		else if (init_pos[0] !== new_pos[0]) {
+			move_ind = "left";
+		} 
+		else {
+			move_ind = "right";
+		} // else (moved right)
+	} // else if
+
+	// this gets the mouse position and converts it to a date time
+	var mouse_pos_in_date = new_pos.map(x.invert);
+  // this gets the previous dates and then rounds them up / down to nearest month
+	mouse_pos_in_date_rounded = mouse_pos_in_date.map(d3.timeMonth.round);
+	// count the number of months between the rounded dates
+	int_month_count = d3.timeMonth.count(mouse_pos_in_date_rounded[0], mouse_pos_in_date_rounded[1]);
+	
+
+
+  
+	// the event is implicitely "end" because of the code above
+	if(int_month_count < 36 && d3.event.type === "end" ) {
+	    if (move_ind === "left") {
+				mouse_pos_in_date_rounded[0] = d3.timeMonth.offset(mouse_pos_in_date_rounded[1], -36);
+				gBrush.call(brush.move, mouse_pos_in_date_rounded.map(x));
+			}
+			else if (move_ind === "right") {
+				mouse_pos_in_date_rounded[1] = d3.timeMonth.offset(mouse_pos_in_date_rounded[0], +36);
+				gBrush.call(brush.move, mouse_pos_in_date_rounded.map(x));
+			}
+	    else if (move_ind === "both") {
+	      // something weird happened here...reset the begining
+	      fn_set_initial_pos();
+	    }
+	}
+
+
+
+
+//	console.log("handle position " + mouse_pos_in_date_rounded.map(x));
+
+	// if (d3.event.type === "end") {
+	// 	gBrush.call(brush.move, mouse_pos_in_date_rounded.map(x));
+	// }
+
+  
+  if (new_pos === null) {
+    handle.attr("display", "none");
+  } else {
+	    handle.attr("display", null)
+	    	.attr("transform", function(d, i) {
+	   			return "translate(" + mouse_pos_in_date_rounded.map(x)[i] + "," + height / 2 + ")"; 
+	    	});
+
+  } // ELSE
+}
+
+
+fn_set_initial_pos();
+
+
+
+
+
+
+
+
+
+
+
+</script>
