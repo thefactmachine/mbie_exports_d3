@@ -1,283 +1,171 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
+<!-- 
+
+run the following in the actual directory and then go to
+localhost:8080
+
+python -m SimpleHTTPServer 8080 
+
+-->
 <style>
 
-.axis--grid .domain {
-  fill: #ddd;
-  stroke: none;
+.enter {
+  fill: steelblue;
 }
 
-.axis--x .domain,
-.axis--grid .tick line {
-  stroke: #fff;
-  stroke-opacity: .5;
-}
-
-.axis--grid .tick--minor line {
-	 stroke: #aaa;
-  	stroke-opacity: .2;
+.update {
+  fill: green;
 }
 
 
-
-
-/*some effects here added to the brush handle*/
-
-/*style for the brush handle*/
-.handle--custom {
-	fill: #eee;
-	stroke: #666;
-	stroke-width: 1.0px;
+.remove {
+  fill: red;
 }
 
-/*style for the rectangle in the middle of the brush*/
-.selection {
-	fill: rgba(161, 198, 231, 1);
-	stroke-width: 0px;
-	fill-opacity: 0.5;
+
+.area {
+	fill: steelblue;
 }
 
 
 
-/*
-.axis--x .tick line {
-  stroke: #fff;
-  stroke-opacity: .8;
+.bar:hover {
+  fill: brown;
 }
 
-
- .tick--minor line {
-  stroke-opacity: .2;
+.axis--x path {
+  display: none;
 }
-
-*/
-
-
-
-.resize {
-  display: inline !important; /* show when empty */
-  fill: #666;
-  fill-opacity: .8;
-  stroke: #000;
-  stroke-width: 1.5px;
-}
-
-
-
-/*this is quite good:
-http://bl.ocks.org/elsherbini/5564315
-
-the following code is sourced from here:
-https://bl.ocks.org/mbostock/6232537
-*/
-
 
 </style>
-<body>
-<script src="https://d3js.org/d3.v4.min.js"></script>
+
+
+
+<svg width="960" height="500"></svg>
+
 
 <script>document.write('<script src="http://' + (location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1"></' + 'script>')</script>
 
+
+<script src="https://d3js.org/d3.v4.min.js"></script>
 <script>
 
+var svg = d3.select("svg"),
+    margin = {top: 20, right: 20, bottom: 30, left: 60},
+    width = +svg.attr("width") - margin.left - margin.right,
+    height = +svg.attr("height") - margin.top - margin.bottom;
+
+// var x = d3.scaleTime()
+//     .domain([new Date(2000, 0, 31), new Date(2015, 11, 31)])
+//     .rangeRound([0, width]);
+
+var x = d3.scaleTime().rangeRound([0, width]);
 
 
-var margin = {top: 200, right: 40, bottom: 200, left: 40},
-    width = 960 - margin.left - margin.right,
-    height = 450 - margin.top - margin.bottom;
+var  y = d3.scaleLinear().rangeRound([height, 0]);
+
+var xAxis = d3.axisBottom(x);
+
+var area = d3.area()
+	.curve(d3.curveMonotoneX)
+    .x(function(d) { return x(d.date); })
+    .y0(height)
+    .y1(function(d) { return y(d.month_tot); });
 
 
-var x = d3.scaleTime()
-    .domain([new Date(2000, 0, 31), new Date(2016, 11, 31)])
-    .rangeRound([0, width]);
+var focus = svg.append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
+var g_data;
 
-var svg = d3.select("body").append("svg")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
-    .on("load", fn_initialise_brush);
-
-var context = svg.append("g")
-    .attr("class", "context")
-    .attr("transform", "translate(" + 30 + "," + 150 + ")");
-
-
-// this is the grid -- the main rectangle of the brush.
-context.append("g")
-    .attr("class", "axis axis--grid")
-    .attr("transform", "translate(0," + height + ")")
-    .call(d3.axisBottom(x)
-    	// .ticks(d3.timeYear, 1) this puts the ticks every year.
-    	// .ticks(d3.timeMonth, 6) puts 2 ticks every year.
-      	.ticks(d3.timeMonth, 6)
-        .tickSize(height)
-        // tickFormat specifies a number format such as 1000 is converted to 1 or 1,000
-        .tickFormat(function() { return null; }))
-    	.selectAll(".tick")
-    	.classed("tick--minor", 
-    		function(d) { 
-    			// d is a reference to the dates contained in the ticks above.
-    			// the d elements are all the first of the month.
-    			return (d.getMonth() == 6 ? true: false ); 
-    		});
-
-// this is the scale at the bottom
-context.append("g")
-    .attr("class", "axis axis--x")
-    .attr("transform", "translate(0," + ((height * 2) + 0) + ")")
-    .call(d3.axisBottom(x)
-    .ticks(d3.timeYear,1)
-    .tickPadding(3)
-    .tickFormat(d3.timeFormat('%Y')))
-    .attr("text-anchor", "middle")
-    .selectAll("text")
-    .attr("x", 0);
-
-
-var dte_start = new Date(2004, 0, 31),
-    dte_end = new Date(2012, 11, 31);
-arr_init_co_ords = [x(dte_start), x(dte_end)];
-
-var brush = d3.brushX()
-                  .extent([[0, 0], [width, height]])
-                  .on("brush", fn_brush_move)
-                  .on("start", fn_brush_start)
-                   .on("end", fn_brush_end);
-
-
-var gBrush = context.append("g")
-              .attr("class", "brush")
-              .attr("transform", "translate(0," + ((height) + 0) + ")")
-              .call(brush);
-
-var handle = gBrush.selectAll(".handle--custom")
-  .data([{type: "w"}, {type: "e"}])
-  .enter().append("path")
-    .attr("class", "handle--custom")
-    .attr("fill", "#666")
-    .attr("fill-opacity", 0.8)
-    .attr("stroke", "#000")
-    .attr("stroke-width", 1.5)
-    .attr("cursor", "ew-resize")
-    .attr("d", function(d, i) {
-		var e = +(d.type == "e"),
-		x = e ? 1 : -1,
-		y = height;
-		return "M" + (0.5 * x) + "," + y + 
-		"A6,6 0 0 " + e + " " + (6.5 * x) + "," + (y + 6) + 
-		"V" + (2 * y - 6) +
-		"A6,6 0 0 " + e + " " + (0.5 * x) + "," + (2 * y) +
-		"Z" +
-		"M" + (2.5 * x) + "," + (y + 8) +
-		"V" + (2 * y - 8) +
-		"M" + (4.5 * x) + "," + (y + 8) +
-		"V" + (2 * y - 8);
-    	} // anon
-    );
-
-
-gBrush.select(".overlay")
-	.on("mousedown.brush", fn_not_selection)
-	.on("touchstart.brush", fn_not_selection);
+// frequency component
+focus.append("g")
+  .append("text")
+    .attr("transform", "rotate(-90)")
+    .attr("y", 6)
+    .attr("dy", "0.71em")
+    .attr("text-anchor", "end")
+    .text("Export value");
 
 
 
-function fn_initialise_brush() {
-	// sets brush to initial position
-	gBrush.call(brush.move, arr_init_co_ords);
-	 handle.attr("display", null)
-	 .attr("transform", function(d, i) { 
-				return "translate(" + arr_init_co_ords[i] + "," + -height + ")";});
-} // fn_initialise_brush
+var gData;
 
-function fn_brush_move() {
-	var s = d3.event.selection;
-	if (s !== null) {
-		handle.attr("display", null)
-		.attr("transform", function(d, i) { 
-			return "translate(" + s[i] + "," + -height + ")"; });
-	} // if
-} // fn_brush_move
+d3.csv("data/monthly_totals.csv", function(d) {
+    d.date = new Date(+d.date.substring(0,4), +d.date.substring(5,7)-1, +d.date.substring(8,10));
+    d.month_tot = +d.month_tot;
+    // d.month_tot = Math.round(+d.month_tot / 1e6);
+    return d;
+    }, 
+    function(error, data) {
+        if (error) throw error;
+        gData = data;
+        // console.log(data);
+         fn_initial();
+       // fn_draw_graph(data, true);
+});
 
-function fn_brush_start() {
-	// record brush initial position in a global
-	brush_init_pos = d3.event.selection;
+
+
+
+
+
+function fn_initial() {
+	// define the y domain 
+	y.domain([0, d3.max(gData, function(d) { return d.month_tot; })]);
+	// now append a y axis
+	focus.append("g")
+		.attr("class", "axis axis--y")
+		.call(d3.axisLeft(y)
+		.ticks(10)
+		.tickFormat(d3.formatPrefix("$,.0", 1e06)));
+
+	// define the x domain
+	x.domain(d3.extent(gData, function(d) { return d.date; }));
+
+	// 
+
+	// append the x axis
+	focus.append("g")
+	.attr("class", "axis axis--x")
+	.attr("transform", "translate(0," + height + ")")
+	.call(xAxis);
+
+    // append the area graph
+    focus.append("path")
+      .datum(gData)
+      .attr("class", "area")
+      .attr("d", area);
+
+} // initial
+
+
+function fn_event(arr_dates, l_new_data)  {
+	// expects an array of two dates
+	x.domain(arr_dates);
+	focus.select(".area")
+		.datum(l_new_data)
+		.attr("d", area);
+	focus.select(".axis--x").call(xAxis);
+
 }
 
 
-function fn_which_handle_moved(l_old_pos, l_new_pos) {
-	var move_ind = "undefined";
-	if (l_old_pos[0] !== l_new_pos[0] && l_old_pos[1] !== l_new_pos[1]) {
-		move_ind = "both";
-	}
-	else if (l_old_pos[0] !== l_new_pos[0]) {
-		move_ind = "left";
-	}
-	else if (l_old_pos[1] !== l_new_pos[1]) {
-		move_ind = "right";	
-	}
-	else if (l_old_pos[0] === l_new_pos[0] && l_old_pos[1] === l_new_pos[1]) {
-		move_ind = "stationary";
-	}
-	else {
-		move_ind = "error";
-	}
-	return(move_ind);
-} // fn_which_handle_moved
-
-function fn_round_dates(l_date) {
-	if (l_date.getDate() > 15) {
-		dte_mod = new Date(l_date.getFullYear(), l_date.getMonth() + 1, 1 );
-
-	}
-	else {
-		dte_mod = l_date;
-	}
-	var dte_rev = new Date(dte_mod.getFullYear(), dte_mod.getMonth(), 1);
-	var dte_less_a_day = d3.timeDay.offset(dte_rev, -1);
-	return(dte_less_a_day);
-}
-
-
-
-function fn_brush_end() {
-	var str_handle_move = fn_which_handle_moved(brush_init_pos, d3.event.selection);
-	// the following provides an array of the left & right mouse positions in dates
-	var mouse_pos_in_date = d3.event.selection.map(x.invert);
-	// convert the array of unrounded dates into rounded dates
-	var mouse_pos_date_round = mouse_pos_in_date.map(function(d, i) {return fn_round_dates(d);});
-	int_month_count = d3.timeMonth.count(mouse_pos_date_round[0], mouse_pos_date_round[1]) + 1;
-	// threshold for number of months
-	int_mth_thold = 12;
-	if (int_month_count < int_mth_thold) {
-		if (str_handle_move === "left") {
-			// get position of the right. subtract 12 months from it. 
-			var dte_rounded_right = mouse_pos_date_round[1];
-			var dte_new_left = d3.timeMonth.offset(dte_rounded_right, -int_mth_thold +1);
-			gBrush.call(brush.move, [x(dte_new_left), d3.event.selection[1]]);
+function fn_slice_object(l_dte1, l_dte2, l_obj_array) {
+	var new_arr = [];
+	for (var i = 0; i < l_obj_array.length; i++) {
+		if (l_obj_array[i].date >= l_dte1 &&  l_obj_array[i].date <= l_dte2 ) {
+			new_arr.push(l_obj_array[i]);
 		} // if
-		else if (str_handle_move === "right") {
-			// get position of the left. add 12 months from it. 
-			var dte_rounded_left = mouse_pos_date_round[0];
-			var dte_new_right = d3.timeMonth.offset(dte_rounded_left, int_mth_thold -1);
-			// move the brush with orig x1 pos and new x2 pos
-			gBrush.call(brush.move, [d3.event.selection[0], x(dte_new_right)]);
-		} // else if
-		else {
-			// something weird happened ... reset the brush
-			fn_initialise_brush();
-		} // else
-	} // if (int_month_count < int_mth_thold)
-} // fn_brush_end() 
-
-
-function fn_not_selection() {
-	// handles mousedown on rectangle. stops event bubbling up to brush
-	d3.event.stopPropagation();
-}
+	} // for
+	fn_event([l_dte1, l_dte2], new_arr);
+} // function
 
 
 
 
 
 </script>
+
+

@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<!-- 
+
+run the following in the actual directory and then go to
+localhost:8080
+
+python -m SimpleHTTPServer 8080 
+
+-->
+<style>
+
+.enter {
+  fill: steelblue;
+}
+
+.update {
+  fill: green;
+}
+
+
+.remove {
+  fill: red;
+}
+
+
+.area {
+	fill: steelblue;
+}
+
+
+
+.bar:hover {
+  fill: brown;
+}
+
+.axis--x path {
+  display: none;
+}
+
+</style>
+
+
+
+<svg width="960" height="500"></svg>
+
+
+<script>document.write('<script src="http://' + (location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1"></' + 'script>')</script>
+
+
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script>
+
+var svg = d3.select("svg"),
+    margin = {top: 20, right: 20, bottom: 30, left: 60},
+    width = +svg.attr("width") - margin.left - margin.right,
+    height = +svg.attr("height") - margin.top - margin.bottom;
+
+// padding increases with width between the bars....
+// var x = d3.scaleBand().rangeRound([0, width]).padding(0.2),
+
+
+var x = d3.scaleTime()
+    .domain([new Date(2000, 0, 31), new Date(2015, 11, 31)])
+    .rangeRound([0, width]);
+
+var  y = d3.scaleLinear().rangeRound([height, 0]);
+
+// D3 Axis - renders a d3 scale in SVG
+// var xAxis = d3.svg.axis()
+//     .scale(x)
+//     .orient("bottom");
+
+
+var xAxis = d3.axisBottom(x);
+
+var area = d3.area()
+    .x(function(d) { return x(d.date); })
+    .y0(height)
+    .y1(function(d) { return y(d.month_tot); });
+
+
+
+
+
+
+
+var focus = svg.append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+var g_data;
+
+//// HERE HERE HERE 
+// single element appended here
+// g.append("g")
+//     .attr("class", "axis axis--y")
+//     .call(d3.axisLeft(y).ticks(10, "%"));
+
+
+
+// // single element appended here
+// var x_axis =  g.append("g")
+//                 .attr("class", "x axis")
+//                 .attr("transform", "translate(0," + height + ")");
+
+
+// // single element appended here = This is the frequency component.
+focus.append("g")
+  .append("text")
+    .attr("transform", "rotate(-90)")
+    .attr("y", 6)
+    .attr("dy", "0.71em")
+    .attr("text-anchor", "end")
+    .text("Frequency");
+
+
+//========================================
+////// CALLBACK ==========================
+//========================================
+
+// The code is borrowed heavily from here
+// https://bl.ocks.org/RandomEtc/cff3610e7dd47bef2d01
+
+
+/// This may be useful to chain together selections
+
+//    http://stackoverflow.com/questions/26421388/d3-js-subtransition-with-exit-and-enter
+
+var bars;
+
+
+
+// ===================================================================
+// ===================================================================
+// ===================================================================
+
+
+// function fn_draw_graph(lcl_data, bln_start) {
+
+//     // we want to prevent the y axis from being redrawn.
+//     if (bln_start) {
+//         y.domain([0, d3.max(lcl_data, function(d) { return d.frequency; })]);
+//         g.append("g")
+//             .attr("class", "axis axis--y")
+//             .call(d3.axisLeft(y).ticks(10, "$"));
+//     }
+
+//     x.domain(lcl_data.map(function(d) { return d.letter; }));
+//     svg.select('.x.axis').transition().duration(100).call(d3.axisBottom(x));
+    
+//     // with key
+//     bars = g.selectAll(".bar").data(lcl_data, function(d) {return d.letter; });
+
+//     // without key
+//    // bars = g.selectAll(".bar").data(lcl_data);
+
+
+
+//     // TRANSITION
+//     bars
+//     .transition()
+//     .duration(300)
+//     .attr("x", function(d) { return x(d.letter); }) 
+//     .attr("width", x.bandwidth()) 
+//     .attr("y", function(d) { return y(d.frequency); })
+//     .attr("height", function(d) { return height - y(d.frequency); }); 
+
+//     // 2) ENTER (APPEND SOMETHING)
+//     bars.enter()
+//     .append("rect")
+//     .attr("class", "bar enter")
+//     .attr("x", function(d) { return x(d.letter);})
+//     .attr("y", function(d) { return y(d.frequency); })
+//     .attr("id", function(d) { return d.letter;})
+//     .attr("width", x.bandwidth())
+//     .attr("height", function(d) { return height - y(d.frequency); });
+
+//     // 3) REMOVE (JUST REMOVE)
+//     bars.exit()
+//     .transition()
+//     .duration(300)
+//     .attr("y", y(0))
+//     .attr("height", height - y(0))
+//     .style('fill-opacity', 1e-6)
+//     .remove();
+
+
+
+// }
+
+
+// ===================================================================
+// ===================================================================
+// ===================================================================
+
+
+
+
+
+var gData;
+
+d3.csv("data/monthly_totals.csv", function(d) {
+    d.date = new Date(+d.date.substring(0,4), +d.date.substring(5,7)-1, +d.date.substring(8,10));
+    d.month_tot = +d.month_tot;
+    // d.month_tot = Math.round(+d.month_tot / 1e6);
+    return d;
+    }, 
+    function(error, data) {
+        if (error) throw error;
+        gData = data;
+        // console.log(data);
+         fn_initial();
+       // fn_draw_graph(data, true);
+});
+
+
+//========================================
+////// CALLBACK ==========================
+//========================================
+
+// this might be useful to test things...
+// gData.map(function(d) {return console.log("date: " + d.date + " value: " + d.month_tot);})
+
+
+
+
+
+function fn_initial() {
+
+
+	y.domain([0, d3.max(gData, function(d) { return d.month_tot; })]);
+
+	focus.append("g")
+		.attr("class", "axis axis--y")
+		.call(d3.axisLeft(y)
+		.ticks(10)
+		.tickFormat(d3.formatPrefix("$,.0", 1e06)));
+
+	 x.domain(d3.extent(gData, function(d) { return d.date; }));
+
+
+
+    focus.append("path")
+      .datum(gData)
+      .attr("class", "area")
+      .attr("d", area);
+
+
+     focus.append("g")
+      .attr("class", "axis axis--x")
+      .attr("transform", "translate(0," + height + ")")
+      .call(xAxis);
+
+
+
+    // // x.domain(gData.map(function(d) { return d.date; }));
+    // var bar_width = width / gData.length;
+
+    // g.append("g")
+    //     .attr("class", "x axis")
+    //     .attr("transform", "translate(0," + height + ")")
+    //     .call(d3.axisBottom(x)
+    //         .ticks(d3.timeYear, 1)
+    //         .tickSize(5)
+    //         .tickPadding(3)
+    //         .tickFormat(d3.timeFormat('%Y')))
+    //     .attr("text-anchor", "middle")
+    //     .selectAll("text")
+    //     .attr("x", 0);
+
+
+
+
+
+   // bars = g.selectAll(".bar").data(gData, function(d) {return d.date; });
+
+
+
+    // bars.enter()
+    // .append("rect")
+    // .attr("class", "bar enter")
+    // .attr("x", function(d) { return x(d.date);})
+    // .attr("y", function(d) { return y(d.month_tot);})
+    // .attr("id", function(d) { return d.date;})
+    // .attr("width", bar_width - 1 )
+    // .attr("height", function(d) { return height - y(d.month_tot); });
+
+
+} // initial
+
+
+
+
+
+// bb = new Date(2005, 5, 30)
+
+
+// d3.tsv("data.tsv", ArrayData, function(error, data) {});
+
+
+
+// function fn_load_data() {
+//     var arr_lcl_return = [];
+//     d3.tsv("data.tsv", function(error, data) {
+//         if (error) throw error;
+//         // "data" is an array of objects.     
+//         data.forEach(function(d) {
+//             var obj_i = {letter: d.letter, frequency: +d.frequency};
+//             arr_lcl_return.push(obj_i);
+//       }); // for each  
+//     }); // d3.tsv
+//     return arr_lcl_return; 
+// } // fn_load_data()
+
+
+// TEST STUFF TEST STUFF
+// TEST STUFF TEST STUFF
+// TEST STUFF TEST STUFF
+
+
+
+// x.domain(lcl_data.map(function(d) { return d.letter; }));
+// arr_test = gData.slice(5,10)
+// arr_letters = arr_test.map(function(d) { return d.letter; })
+// x.domain(arr_letters)
+// x("H")
+
+// RUN THIS
+// fn_draw_graph(gData.slice(5,10), false)
+
+// AND THEN THIS
+
+// fn_draw_graph(gData.slice(15,25), false)
+
+
+// ====================================================
+// AND NOW THIS:
+
+//   obj_test = [ gData[0], gData[2], gData[4], gData[6], gData[8], gData[10], gData[12], gData[14], gData[16], gData[18], gData[20]];
+
+// // ====================================================
+
+// fn_draw_graph(obj_test, false);
+
+
+
+// ====================================================
+// AND FINALLY THIS
+
+// expecting the following
+// A .08167  E .12702  I .06966  O .07507  U .02758
+
+//    obj_vowels = [ gData[0], gData[4], gData[8], gData[14], gData[20]];
+
+
+
+
+
+
+// fn_draw_graph(obj_vowels, false);
+
+
+
+
+
+
+// TEST STUFF TEST STUFF
+// TEST STUFF TEST STUFF
+// TEST STUFF TEST STUFF
+
+
+
+
+
+
+
+
+
+
+
+
+</script>
+
+
