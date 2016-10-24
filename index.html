@@ -1,171 +1,37 @@
 <!DOCTYPE html>
-<meta charset="utf-8">
-<!-- 
 
-run the following in the actual directory and then go to
-localhost:8080
+<html>
 
-python -m SimpleHTTPServer 8080 
-
--->
-<style>
-
-.enter {
-  fill: steelblue;
-}
-
-.update {
-  fill: green;
-}
+	<head>
+		<meta charset="utf-8">
+		<link rel="stylesheet" type="text/css" href="css/main.css">
+		<link rel="stylesheet" type="text/css" href="css/area_style.css">
+		<link rel="stylesheet" type="text/css" href="css/brush_style.css">
+	</head>
 
 
-.remove {
-  fill: red;
-}
-
-
-.area {
-	fill: steelblue;
-}
-
-
-
-.bar:hover {
-  fill: brown;
-}
-
-.axis--x path {
-  display: none;
-}
-
-</style>
-
-
-
-<svg width="960" height="500"></svg>
+	<body>
+		<div id = "svg_container">
+			<svg id ="svg_area" width="960" height="500"></svg>
+			<svg id ="svg_brush" width="880" height="70" ></svg>
+		</div>
+	</body>
 
 
 <script>document.write('<script src="http://' + (location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1"></' + 'script>')</script>
-
-
 <script src="https://d3js.org/d3.v4.min.js"></script>
-<script>
-
-var svg = d3.select("svg"),
-    margin = {top: 20, right: 20, bottom: 30, left: 60},
-    width = +svg.attr("width") - margin.left - margin.right,
-    height = +svg.attr("height") - margin.top - margin.bottom;
-
-// var x = d3.scaleTime()
-//     .domain([new Date(2000, 0, 31), new Date(2015, 11, 31)])
-//     .rangeRound([0, width]);
-
-var x = d3.scaleTime().rangeRound([0, width]);
-
-
-var  y = d3.scaleLinear().rangeRound([height, 0]);
-
-var xAxis = d3.axisBottom(x);
-
-var area = d3.area()
-	.curve(d3.curveMonotoneX)
-    .x(function(d) { return x(d.date); })
-    .y0(height)
-    .y1(function(d) { return y(d.month_tot); });
-
-
-var focus = svg.append("g")
-    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-var g_data;
-
-// frequency component
-focus.append("g")
-  .append("text")
-    .attr("transform", "rotate(-90)")
-    .attr("y", 6)
-    .attr("dy", "0.71em")
-    .attr("text-anchor", "end")
-    .text("Export value");
 
 
 
-var gData;
-
-d3.csv("data/monthly_totals.csv", function(d) {
-    d.date = new Date(+d.date.substring(0,4), +d.date.substring(5,7)-1, +d.date.substring(8,10));
-    d.month_tot = +d.month_tot;
-    // d.month_tot = Math.round(+d.month_tot / 1e6);
-    return d;
-    }, 
-    function(error, data) {
-        if (error) throw error;
-        gData = data;
-        // console.log(data);
-         fn_initial();
-       // fn_draw_graph(data, true);
-});
+<script src="js/construct_brush.js"></script> 
+<script src="js/crossfilter.min.js"></script> 
 
 
 
+<script src="js/svg_area.js"></script>
 
 
 
-function fn_initial() {
-	// define the y domain 
-	y.domain([0, d3.max(gData, function(d) { return d.month_tot; })]);
-	// now append a y axis
-	focus.append("g")
-		.attr("class", "axis axis--y")
-		.call(d3.axisLeft(y)
-		.ticks(10)
-		.tickFormat(d3.formatPrefix("$,.0", 1e06)));
+<script src="js/load_data.js"></script>
 
-	// define the x domain
-	x.domain(d3.extent(gData, function(d) { return d.date; }));
-
-	// 
-
-	// append the x axis
-	focus.append("g")
-	.attr("class", "axis axis--x")
-	.attr("transform", "translate(0," + height + ")")
-	.call(xAxis);
-
-    // append the area graph
-    focus.append("path")
-      .datum(gData)
-      .attr("class", "area")
-      .attr("d", area);
-
-} // initial
-
-
-function fn_event(arr_dates, l_new_data)  {
-	// expects an array of two dates
-	x.domain(arr_dates);
-	focus.select(".area")
-		.datum(l_new_data)
-		.attr("d", area);
-	focus.select(".axis--x").call(xAxis);
-
-}
-
-
-function fn_slice_object(l_dte1, l_dte2, l_obj_array) {
-	var new_arr = [];
-	for (var i = 0; i < l_obj_array.length; i++) {
-		if (l_obj_array[i].date >= l_dte1 &&  l_obj_array[i].date <= l_dte2 ) {
-			new_arr.push(l_obj_array[i]);
-		} // if
-	} // for
-	fn_event([l_dte1, l_dte2], new_arr);
-} // function
-
-
-
-
-
-</script>
-
-
+</html>

@@ -1,0 +1,33 @@
+#svg_brush .axis--grid .domain {
+  fill: #ddd;
+  stroke: none;
+}
+
+#svg_brush .axis--x .domain, #svg_brush  .axis--grid .tick line {
+  stroke: #fff;
+  stroke-opacity: .5;
+}
+
+#svg_brush  .axis--grid .tick--minor line {
+	 stroke: #aaa;
+  	stroke-opacity: .2;
+}
+
+#svg_brush {
+	margin-left: 42px;
+}
+
+
+/*style for the brush handle*/
+#svg_brush .handle--custom {
+	fill: #eee;
+	stroke: #666;
+	stroke-width: 1.0px;
+}
+
+/*style for the rectangle in the middle of the brush*/
+#svg_brush .selection {
+	fill: rgba(70, 130, 180, 1);
+	stroke-width: 0px;
+	fill-opacity: 0.5;
+}
