@@ -1,40 +1,31 @@
-
-
-function fn_initialise_brush() {
+function fn_initialise_brush(fn_callback) {
 	// sets brush to initial position
+	//console.log("in initalise brush");
 	brush_obj.gBrush.call(brush_obj.brush.move, brush_obj.arr_init_co_ords);
 	 brush_obj.handle.attr("display", null)
 	 .attr("transform", function(d, i) { 
 				return "translate(" + brush_obj.arr_init_co_ords[i] + "," + -brush_obj.brush_height + ")";});
+	fn_callback(null, "initialised brush");
 } // fn_initialise_brush
-
-
-
-
-
-// var bln_started = true;
 
 
 function fn_brush_move() {
 	var s = d3.event.selection;
+	//	console.log("in brush move");
 	if (s !== null) {
 		brush_obj.handle.attr("display", null)
 		.attr("transform", function(d, i) { 
 			return "translate(" + s[i] + "," + -brush_obj.brush_height + ")"; });
 		fn_update_area(s);
+		// console.log(new Date());
 	} // if
 } // fn_brush_move
-
 
 
 function fn_brush_start() {
 	// record brush initial position in a global
 	brush_init_pos = d3.event.selection;
 }
-
-
-
-
 
 
 function fn_not_selection() {
@@ -83,33 +74,28 @@ function fn_round_dates(l_date) {
 	return(dte_less_a_day);
 }
 
-var bln_started = true;
+
 
 function fn_update_area(lcl_s)  {
 	// wrapper function to update the area chart
+//	console.log("updating areas");
 	var mouse_pos_in_date = lcl_s.map(brush_obj.x_brush.invert);
 	var mouse_pos_date_round = mouse_pos_in_date.map(function(d, i) {return fn_round_dates(d);});
+	// area_fun.update_graph(mouse_pos_date_round[0], mouse_pos_date_round[1], gData);
+
+	stack_area_fun.update_graph(mouse_pos_date_round[0], mouse_pos_date_round[1], g_m_continent);
+//	obj_map_colours = fn_generate_map_colors(mouse_pos_date_round[0], mouse_pos_date_round[1]);
+
+//	fn_update_map();
 	
 
-
-	// only update the graph if not the inital event
-	if (!bln_started) {
-		area_fun.update_graph(mouse_pos_date_round[0], mouse_pos_date_round[1], gData);
-		
-	}
-	bln_started = false;
- 
+//	fn_cf_wrapper(mouse_pos_date_round[0], mouse_pos_date_round[1]);
+//	fn_update_map();
 }
 
 
-
-
-
-
-
-
 function fn_brush_end() {
-	// console.log("in brush end");
+//	console.log("in brush end");
 	if (!d3.event.selection) return fn_initialise_brush();
 	var str_handle_move = fn_which_handle_moved(brush_init_pos, d3.event.selection);
 	// console.log(str_handle_move);
@@ -142,16 +128,10 @@ function fn_brush_end() {
 
 //	console.log(mouse_pos_date_round[0]);
 //	console.log(mouse_pos_date_round[1]);
-fn_cf_wrapper(mouse_pos_date_round[0], mouse_pos_date_round[1]);
+// fn_cf_wrapper(mouse_pos_date_round[0], mouse_pos_date_round[1]);
+// obj_map_colours = fn_generate_map_colors(mouse_pos_date_round[0], mouse_pos_date_round[1]);
+
+// fn_update_map();
+//	stack_area_fun.update_graph(mouse_pos_date_round[0], mouse_pos_date_round[1], gData_new);
 
 } // fn_brush_end() 
-
-
-/// TO DO:
-// brush_init_posiiton
-
-
-
-
-
-

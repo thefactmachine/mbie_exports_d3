@@ -2,13 +2,14 @@
 var cf_exports;
 var cf_dim_date;
 var cf_dim_country;
+country_map = d3.map();
 
-var fn_initial_crossfilter = function() {
+var fn_initial_crossfilter = function(fn_callback) {
 	// initialises crossfilter with data read from disk
 	cf_exports = crossfilter(gExports);
 	cf_dim_date = cf_exports.dimension(function(d) { return d.date; });
 	cf_dim_country = cf_exports.dimension(function(d) { return d.country; });
-	console.log("loaded crossfilter");
+	fn_callback(null, "initialised crossfilter");
 };
 
 
@@ -27,13 +28,27 @@ var fn_process_cf_data = function() {
 							.group()
 							.reduceSum(function(fact) { return fact.total; });
 
-	return country_measure.top(10);
+	return country_measure.top(Infinity);
 };
 
 
-var fn_cf_wrapper = function(l_dte_from, l_dte_to) {
+var fn_cf_wrapper = function(l_dte_from, l_dte_to, fn_callback) {
 	fn_set_date(l_dte_from, l_dte_to);
-	var arr_return =  fn_process_cf_data();
-	console.log(arr_return.map(function(d) {return d.key;}));
-	console.log(arr_return.map(function(d) {return d.value;}));
+	arr_return =  fn_process_cf_data();
+
+	s_obj = arr_return.map(function(d) { return {key: d.key, value: d.value};});
+	s_obj.map(function(d) { country_map.set(d.key, +d.value);});
+	fn_callback(null, "set initial values for crossfilter");
+//	console.log("from " + l_dte_from + " to " + l_dte_to);
+
+//	console.log(country_map.keys());
+//	console.log(country_map.values());
+
+	//  country_map.get("Australia")
+	
+
+
+	//console.log(s_keys);
+	// console.log(arr_return.map(function(d) {return d.key;}));
+	// console.log(arr_return.map(function(d) {return d.value;}));
 };

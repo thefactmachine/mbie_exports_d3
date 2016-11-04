@@ -1,4 +1,4 @@
-function fn_brush_geometry() {
+function fn_brush_geometry(fn_callback) {
 	var brush_margin = {top: 20, right: 0, bottom: 0, left: 0};
 
 	// var brush_width = 910;
@@ -79,8 +79,6 @@ function fn_brush_geometry() {
 		 			.on("end", fn_brush_end);
 
 
-
-
 	// this is the slider component
 	var gBrush = context_brush.append("g")
 	              .attr("class", "brush")
@@ -127,6 +125,8 @@ function fn_brush_geometry() {
 		arr_init_co_ords : arr_init_co_ords,
 		x_brush: x_brush
 	};
+
+	fn_callback(null, "created brush geometry");
 
 
 }
