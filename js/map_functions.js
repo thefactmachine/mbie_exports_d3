@@ -1,23 +1,14 @@
-var arr_col = ["rgb(229,245,249)","rgb(204,236,230)", 
-				"rgb(153,216,201)","rgb(102,194,164)","rgb(65,174,118)",
-				"rgb(35,139,69)"];
 
-var blank_col = "rgb(255,255,255)";
-
-var red_col = "rgb(255,0, 0)";
-var	q_z = d3.scaleQuantile().domain(country_map.values()).range(arr_col);
 var svg_map = d3.select("#svg_map");
+var centered;
 
-function fn_calc_color(str_country_name) {
-	var  r_val;
-	if (country_map.has(str_country_name)) {
-		r_val = q_z(country_map.get(str_country_name));
-	}
-	else {
-		r_val = blank_col;
-	}
-	return  r_val;
-} // fn_calc_color
+var width = d3.select("#svg_map").attr("width");
+var height = d3.select("#svg_map").attr("height");
+var upper_left = [0,0];
+var lower_right = [width, height];
+var default_bounds = [upper_left, lower_right];
+
+
 
 
 
@@ -31,6 +22,20 @@ function fn_map_mouse_over(x ,  y, txt)  {
 
 
 
+var fn_c_colour = function(l_name) {
+	var str_curr_col;
+	if (obj_res[l_name] === undefined) {
+	str_curr_col = "rgb(240,240,240)";
+	}
+	else {
+	str_curr_col = obj_res[l_name];
+	}
+	return str_curr_col;
+};
+
+
+
+
 
 function fn_load_map(fn_callback) {
 	d3.json("../data/custom_simple_geo.json", function(geo_data){
@@ -38,61 +43,124 @@ function fn_load_map(fn_callback) {
 		var projection = d3.geoMercator()
 	    .scale(145)
 	    .translate([453, 418]);
-		var geo_path = d3.geoPath()
+		geo_path = d3.geoPath()
 		    .projection(projection);
 
-		svg_map.append("g")
-			.attr("class", "world_map")
-		//	.attr("fill", "rgb(0,240,240)")
+		focus = svg_map.append("g")
+			.attr("class", "world_map");
+		focus	
 		.selectAll("path")
 			.data(glb_geo_data.features)
 		.enter().append("path")
 		.attr("stroke", "rgb(140,140,140)")
+		.attr('vector-effect', 'non-scaling-stroke')
 		.attr("stroke-width", "1")
-		.attr("fill", function(d)  { return fn_calc_color(d.properties.name);})
+		.attr("fill", function(d)  {return fn_c_colour(d.properties.name);})
 		
 		.on("mouseover", function(d)  {
 				var x_p = d3.mouse(this)[0];
 				var y_p = d3.mouse(this)[1] - 30;
 				d3.select(this).attr("fill", "#ff0033");
 				fn_map_mouse_over(x_p, y_p, d.properties.name);
+
+
+
+				fn_create_array_from_country(d.properties.name);
+				aus_test_update();
+
+
+
+
 		})
 
 		.on("mouseleave", function(d) {
-			d3.select(this).attr("fill", function(d)  { return fn_calc_color(d.properties.name);});
+			d3.select(this).attr("fill", function(d)  { return fn_c_colour(d.properties.name);});
 			d3.select("#tooltip").remove();
 
 		})
+		.on("click", fn_clicked)
+		.on("dblclick", fn_double_click)
 		.attr("d", geo_path);
 	});
 	fn_callback(null, "loaded map");
 
 } //load map
 
-// function fn_update_map()  {
-// 	 	q_z.domain(country_map.values());
-// 		d3.selectAll("#svg_map g path")
-// 		.each(function(d, i) {
-// 			var elt = d3.select(this);	
-// 			var prev_col = elt.attr("fill");
-// 			var curr_col = fn_calc_color(d.properties.name);
-			
-// 			if (prev_col  != curr_col) {
-// 				d3.select(this)
-// 					.attr("fill", curr_col)
-// 					.attr("stroke",red_col)
-// 					.transition()
-// 					.duration(2500)				
-// 					.attr("stroke","rgb(140,140,140)");
 
-// 			}
-// 			else {
-// 				d3.select(this)
-// 					.attr("fill", prev_col)
-// 					.attr("stroke","rgb(140,140,140)");
-// 			}
-// 		});
-// } // fn_update_map
+function fn_compute_tx(l_bounds, l_type) {
+	var dx = l_bounds[1][0] - l_bounds[0][0];
+	var dy = l_bounds[1][1] - l_bounds[0][1];
+	var x = (l_bounds[0][0] + l_bounds[1][0]) / 2;
+	var y = (l_bounds[0][1] + l_bounds[1][1]) / 2;
+
+	var width = d3.select("#svg_map").attr("width");
+	var height = d3.select("#svg_map").attr("height");
+	if (l_type !== "zoom") {scaler = 1;} else {scaler = 0.5;}
+
+	var scale = scaler / Math.max(dx / width, dy / height);
+	var translate = [width / 2 - scale * x, height / 2 - scale * y];
+	var rtn_obj = {};
+	var str_scale = "scale";
+	var str_translate = "translate";
+
+	rtn_obj[str_scale] = scale;
+	rtn_obj[str_translate] = translate;
+	return rtn_obj;
+
+}
+
+
+
+
+function fn_clicked(d) {
+	var obj_recompute;
+	
+	// if clicked on a different polygon to one selected
+	if ( centered !== d) {
+		console.log("zoom in");
+		centered = d;
+		obj_recompute = fn_compute_tx(geo_path.bounds(d), "zoom");
+	}
+	
+	// if clicked the SAME polygon as selected
+	else {
+		centered = null;
+		console.log("zoom out");
+		obj_recompute = fn_compute_tx(default_bounds, "out");
+	}
+	
+	
+     focus
+     .transition()
+     .duration(300)
+     .attr("transform", "translate(" + obj_recompute.translate + 
+     	")scale(" + obj_recompute.scale + ")");
+
+}
+
+
+
+
+function fn_double_click(d)  {
+	console.log("double_click");
+	var width = d3.select("#svg_map").attr("width");
+	var height = d3.select("#svg_map").attr("height");
+	var upper_left = [0,0];
+	var lower_right = [width, height];
+	var z_bounds = [upper_left, lower_right];
+
+	var obj_recompute = fn_compute_tx(z_bounds);
+
+
+	console.log(obj_recompute);
+
+     focus.attr("transform", "translate(" + obj_recompute.translate + 
+     	")scale(" + obj_recompute.scale + ")");
+
+
+}
+
+
 
 
 
@@ -100,56 +168,8 @@ function fn_update_map()  {
 	 	//q_z.domain(country_map.values());
 		d3.selectAll("#svg_map g path")
 		.each(function(d, i) {
-			curr_name = d.properties.name;
-			
-			if (obj_res[curr_name] === undefined) {
-				curr_col = "rgb(240,240,240)";
-			}
-			else {
-				curr_col = obj_res[curr_name];
-			}
-
-
-		
-		//	console.log(curr_name);
-		//	console.log(curr_col);
-			d3.select(this).attr("fill", curr_col);
-
-		//	d3.select(this).attr("fill", obj_res.d.properties.name);
-		//	console.log("this is d " + d.properties.name);
-		//	console.log("this is i"  + i);			
-
-
+			d3.select(this).attr("fill", fn_c_colour(d.properties.name));
 		});
 } // fn_update_map
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 

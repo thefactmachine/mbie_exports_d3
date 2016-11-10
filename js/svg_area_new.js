@@ -10,7 +10,7 @@ var stack_area_fun = (function() {
 	
 	
 	// SCALES
-	  x_area_stack = d3.scaleTime().range([0, area_width_stack]);
+	var  x_area_stack = d3.scaleTime().range([0, area_width_stack]);
 	var  y_area_stack = d3.scaleLinear().range([area_height_stack, 0]);
 	var  z_area_stack = d3.scaleOrdinal(d3.schemeCategory20c);
 
@@ -65,8 +65,7 @@ var stack_area_fun = (function() {
 		}, // fn_filter_data (Beachten Sie das Komma)
 		
 
-		initial_area: function(fn_callback) {
-			
+		initial_area: function(fn_callback) {		
 			// axis label
 			focus_area_stack.append("g")
 			.append("text")
@@ -76,8 +75,6 @@ var stack_area_fun = (function() {
 			.attr("text-anchor", "end")
 			.text("Export value");
 
-
-
 			// prep le data
 			arr_continent_keys = Object.keys(g_m_continent[0]).splice(1,5);
 			console.log(arr_continent_keys);
@@ -86,8 +83,6 @@ var stack_area_fun = (function() {
     		z_area_stack.domain(arr_continent_keys);  		
     		x_area_stack.domain([new Date(2000, 0, 31), new Date(2015, 12, 31)]);
 
-
-
 			// axis x axis
 			focus_area_stack.append("g")
 			.attr("class", "axis axis--x")
@@ -95,6 +90,7 @@ var stack_area_fun = (function() {
 			.call(xAxis_area_stack);
 
 
+			// this is the area data.
 			d3.select("#svg_new_area g")
 			.selectAll(".layer")
 			.data(stack_data)
