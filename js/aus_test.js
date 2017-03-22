@@ -13,14 +13,20 @@ function aus_test(fn_callback) {
 	 var a_test_height = 157 - a_test_margin.top - a_test_margin.bottom;
 
 
-	 aus_group = d3.select("#aus_test")
-	    .append("g")
-	    .attr("id", "aus_test_g")
-	  	.attr("transform", "translate(" + a_test_margin.left + "," + a_test_margin.top + ")");
+
+
+	aus_group = d3.select("#aus_test_g");
+	console.log(aus_group);
+
+
+ 	aus_group.attr("transform", "translate(" + a_test_margin.left + "," + a_test_margin.top + ")");
 
 
 
-	// // width is 730
+
+
+
+
 	 aus_test_x = d3.scaleTime().range([0, a_test_width]);
 	 aus_test_y = d3.scaleLinear().range([a_test_height, 0]);
 	
@@ -29,11 +35,16 @@ function aus_test(fn_callback) {
 
 
 	 yAxis_aus_test = d3.axisLeft(aus_test_y).ticks(5).tickSize(2).tickFormat(d3.format(".0s"));
-	 // xAxis_au_test = d3.axisBottom(aus_test_x);
 
 
 	 aus_test_x.domain(d3.extent(arr_new_data, function(d) { return d.date; }));
 	 aus_test_y.domain([0, d3.max(arr_new_data, function(d) { return d.total; })]);
+
+
+
+
+
+	 rec_group = aus_group.append("g");
 
 
 // define the line
@@ -43,13 +54,13 @@ function aus_test(fn_callback) {
     .y(function(d) { return aus_test_y(d.total); });
 
 
+//console.log(arr_new_data);
 
  // Add the valueline path.
   aus_group.append("path")
       .data([arr_new_data])
       .attr("class", "line")
       .attr("d", valueline);
-
 
 // x axis here
 	 aus_group.append("g")
@@ -58,34 +69,76 @@ function aus_test(fn_callback) {
 	 			.call(xAxis_au_test);
 
 
- 
 // y axis here
 	 aus_group.append("g")
 	 			.attr("class", "axis axis--y")
 	 			.call(yAxis_aus_test);
-	 			// .ticks(5)
-	 			// .tickSize(2)
-	 			// .tickFormat(d3.format(".0s")));
 
-	 		//	.tickFormt(d3.formatPrefix("$,.0", 1e06)));
+	bbox =  d3.select("#aus_test_g").node().getBBox();
+//	console.log(bbox.width);
+//	console.log(bbox.height);
+
+
+	bbox_dd = d3.select("#aus_test_g .axis--y").node().getBBox();
+
+
+	aus_group.append("g")
+		.append("text")
+		.attr("class", "country_text")
+		.attr("transform", "rotate(0)")
+		.attr("y", 10)
+		.attr("dy", "1.5em")
+		.attr("dx", "0.5em")
+		.attr("text-anchor", "start")
+		.text("Export value");
+
+
+	rec_group.append("rect")
+		.attr("width", 260.5 + 10)
+		.attr("height", bbox.height + 10)
+		.attr("x", -35.5)
+		.attr("y", -10)
+		.attr("style", "fill:rgb(255,255,255)")
+		.attr("stroke", "grey")
+		.attr("opacity", "0.8");
+
+ fn_invisible();
+
 
 	if (fn_callback !== null) {
 		fn_callback(null, "aus test");
 	}
 
+
+
+
+} // function
+
+
+function fn_invisible() {
+	aus_group.attr("opacity",0);
 }
 
 
 
 
-function aus_test_update() {
+function aus_test_update(l_x, l_y, l_t) {
+	
+	aus_group.attr("opacity",100);
+	aus_group.attr("transform", "translate(" + l_x + "," + l_y + ")");	
+
 	aus_test_x.domain(d3.extent(arr_new_data,function(d) {return d.date;}));
 	aus_test_y.domain([0, d3.max(arr_new_data,function(d) {return d.total;})]);
-	xAxis_au_test = d3.axisBottom(aus_test_x).ticks(5);
+	xAxis_au_test = d3.axisBottom(aus_test_x).ticks(3);
+	yAxis_aus_test = d3.axisLeft(aus_test_y).ticks(3).tickSize(2).tickFormat(d3.format(".0s"));
 
 
+	aus_group.select(".country_text").text(l_t);
 
-	d3.select("#aus_test g path")
+
+//	console.log(l_x, l_y);
+
+	d3.select("#aus_test_g path")
 	.data([arr_new_data])
 	.attr("d", valueline);
 
@@ -95,8 +148,6 @@ function aus_test_update() {
 
 }
 
-/// need to run this....
-// aus_test(null)
 
 
 

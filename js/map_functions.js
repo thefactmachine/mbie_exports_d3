@@ -8,17 +8,9 @@ var upper_left = [0,0];
 var lower_right = [width, height];
 var default_bounds = [upper_left, lower_right];
 
+focus = svg_map.append("g");
 
-
-
-
-function fn_map_mouse_over(x ,  y, txt)  {
-	context = svg_map.append("text");
-	context.attr("x", x);
-	context.attr("y", y);
-	context.attr("id", "tooltip");
-	context.text(txt);
-}
+svg_map.append("g").attr("id", "aus_test_g");
 
 
 
@@ -34,6 +26,72 @@ var fn_c_colour = function(l_name) {
 };
 
 
+var fn_l_graph_placement = function(l_arr)  {
+	// couple of issues here:
+	// d3 draws the svg at where the y axis is
+	// so need to calculate the width of the ticks
+	// also the svg world map has a margin of 50 units.
+	// although when I use the ruler...this became 68.
+
+//	console.log(l_arr[0]);
+	var line_graph_width = 270;
+	// this amount is defined in au_test
+	var margin = 35.5;
+	var horiz_padding = 20;
+	var left_x = l_arr[0][0];
+	var right_x = l_arr[1][0];
+	var top_y = l_arr[0][1];
+	var bottom_y = l_arr[1][1];
+
+	
+	var graph_left_side;
+	var graph_top_side;
+	
+	// if the left top corner is less than 380
+	// this takes care of horizontal placement
+	if (left_x < 380 && left_x > 0 ) {
+		graph_left_side =  right_x + margin + horiz_padding;
+	}
+
+	// hack for russia
+	else if (left_x < 0) {
+		graph_left_side = 400;
+	}
+	
+	else {
+		// left_x is the extent; margin is the inset from side; padding is some arbitrary space
+		graph_left_side = left_x - line_graph_width + margin - horiz_padding;
+	}
+
+
+	if (bottom_y < 300) {
+		graph_top_side = bottom_y;
+
+	}
+
+	else {
+		graph_top_side = bottom_y - 136;
+
+	}
+
+
+
+	
+
+	console.log("bottom_y  " + bottom_y);
+
+	console.log("left  " + left_x);
+	console.log("right  " + right_x);
+	console.log("computed left in funct  " + graph_left_side);
+
+	return [graph_left_side, graph_top_side];
+
+
+};
+
+
+var timer;
+
 
 
 
@@ -46,8 +104,13 @@ function fn_load_map(fn_callback) {
 		geo_path = d3.geoPath()
 		    .projection(projection);
 
-		focus = svg_map.append("g")
-			.attr("class", "world_map");
+
+		focus.attr("class", "world_map");
+
+
+
+
+
 		focus	
 		.selectAll("path")
 			.data(glb_geo_data.features)
@@ -60,22 +123,21 @@ function fn_load_map(fn_callback) {
 		.on("mouseover", function(d)  {
 				var x_p = d3.mouse(this)[0];
 				var y_p = d3.mouse(this)[1] - 30;
-				d3.select(this).attr("fill", "#ff0033");
-				fn_map_mouse_over(x_p, y_p, d.properties.name);
-
-
-
+				d3.select(this).attr("fill", "#ff0033");		
+				// this re-calculates arr_new_data
 				fn_create_array_from_country(d.properties.name);
-				aus_test_update();
-
-
-
+				arr_pos = fn_l_graph_placement(geo_path.bounds(d));
+				aus_test_update(arr_pos[0], arr_pos[1], d.properties.name);
+				clearTimeout(timer);
 
 		})
 
 		.on("mouseleave", function(d) {
 			d3.select(this).attr("fill", function(d)  { return fn_c_colour(d.properties.name);});
 			d3.select("#tooltip").remove();
+			timer = setTimeout(function() {fn_invisible();}, 500);
+
+			//fn_invisible() ;
 
 		})
 		.on("click", fn_clicked)
@@ -166,9 +228,12 @@ function fn_double_click(d)  {
 
 function fn_update_map()  {
 	 	//q_z.domain(country_map.values());
-		d3.selectAll("#svg_map g path")
+		d3.selectAll("#svg_map .world_map path")
 		.each(function(d, i) {
+  		
+  		//	console.log(d);
 			d3.select(this).attr("fill", fn_c_colour(d.properties.name));
+  
 		});
 } // fn_update_map
 

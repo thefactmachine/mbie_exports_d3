@@ -105,7 +105,7 @@ d3.queue(1)
 	.defer(fn_brush_geometry)
 	.defer(fn_load_map)
 	.defer(fn_initialise_brush)
-//	.defer(aus_test)
+	.defer(aus_test)
 .awaitAll(finished);
 
 

@@ -86,11 +86,11 @@ function fn_update_area(lcl_s)  {
 	stack_area_fun.update_graph(mouse_pos_date_round[0], mouse_pos_date_round[1], g_m_continent);
 	obj_map_colours = fn_generate_map_colors(mouse_pos_date_round[0], mouse_pos_date_round[1]);
 
-	fn_update_map();
+//	fn_update_map();
 	
 
 //	fn_cf_wrapper(mouse_pos_date_round[0], mouse_pos_date_round[1]);
-//	fn_update_map();
+	fn_update_map();
 }
 
 

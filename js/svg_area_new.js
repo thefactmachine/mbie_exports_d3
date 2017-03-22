@@ -70,7 +70,7 @@ var stack_area_fun = (function() {
 			focus_area_stack.append("g")
 			.append("text")
 			.attr("transform", "rotate(-90)")
-			.attr("y", 6)
+			.attr("y", 135)
 			.attr("dy", "0.71em")
 			.attr("text-anchor", "end")
 			.text("Export value");

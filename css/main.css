@@ -10,3 +10,11 @@
   stroke: steelblue;
   stroke-width: 1px;
 }
+
+
+.country_text {
+	font-family: helvetica, sans-serif;
+	font-style: italic;
+	font-size: 10px;
+	fill: #0000FF;
+}
